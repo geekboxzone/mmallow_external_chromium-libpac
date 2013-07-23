@@ -6,13 +6,12 @@
 #define NET_PROXY_PROXY_RESOLVER_JS_BINDINGS_H_
 #pragma once
 
+#include <utils/String16.h>
 #include <string>
-
 
 namespace net {
 
-class HostResolver;
-class NetLog;
+class ProxyErrorListener;
 
 // Interface for the javascript bindings.
 class ProxyResolverJSBindings {
@@ -20,9 +19,6 @@ class ProxyResolverJSBindings {
   ProxyResolverJSBindings() {}// : current_request_context_(NULL) {}
 
   virtual ~ProxyResolverJSBindings() {}
-
-  // Handler for "alert(message)"
-  virtual void Alert(const std::wstring& message) = 0;
 
   // Handler for "myIpAddress()". Returns true on success and fills
   // |*first_ip_address| with the result.
@@ -49,13 +45,7 @@ class ProxyResolverJSBindings {
   virtual bool DnsResolveEx(const std::string& host,
                             std::string* ip_address_list) = 0;
 
-  // Handler for when an error is encountered. |line_number| may be -1
-  // if a line number is not applicable to this error.
-  virtual void OnError(int line_number, const std::wstring& error) = 0;
-
   // Creates a default javascript bindings implementation that will:
-  //   - Send script error messages to both VLOG(1) and the NetLog.
-  //   - Send script alert()s to both VLOG(1) and the NetLog.
   //   - Use the provided host resolver to service dnsResolve().
   //
   // Note that |host_resolver| will be used in sync mode mode.

@@ -6,6 +6,8 @@
 #include <cstdio>
 #include <string>
 
+#include <utils/String16.h>
+
 #include "proxy_resolver_v8.h"
 
 #include "proxy_resolver_script.h"
@@ -17,6 +19,8 @@
 #include <iostream>
 
 #include <string.h>
+#include <utils/String8.h>
+#include <utils/String16.h>
 
 // Notes on the javascript environment:
 //
@@ -67,21 +71,17 @@
 // isInNetEx()         | N/A         |  IPv4/IPv6        |  IPv4/IPv6
 // -----------------+-------------+-------------------+--------------
 
-static bool DoIsStringASCII(const std::wstring& str) {
-  for (size_t i = 0; i < str.length(); i++) {
-    unsigned char c = str[i];
+static bool DoIsStringASCII(const android::String16& str) {
+  for (size_t i = 0; i < str.size(); i++) {
+    unsigned short c = str.string()[i];
     if (c > 0x7F)
       return false;
   }
   return true;
 }
 
-bool IsStringASCII(const std::wstring& str) {
+bool IsStringASCII(const android::String16& str) {
   return DoIsStringASCII(str);
-}
-
-std::string UTF16ToASCII(const std::wstring& utf16) {
-  return std::string(utf16.begin(), utf16.end());
 }
 
 namespace net {
@@ -99,11 +99,11 @@ class V8ExternalStringFromScriptData
     : public v8::String::ExternalStringResource {
  public:
   explicit V8ExternalStringFromScriptData(
-      const std::wstring& script_data)
+      const android::String16& script_data)
       : script_data_(script_data) {}
 
   virtual const uint16_t* data() const {
-    return reinterpret_cast<const uint16_t*>(script_data_.data());
+    return script_data_.string();
   }
 
   virtual size_t length() const {
@@ -111,7 +111,7 @@ class V8ExternalStringFromScriptData
   }
 
  private:
-  const std::wstring& script_data_;
+  const android::String16& script_data_;
 //  DISALLOW_COPY_AND_ASSIGN(V8ExternalStringFromScriptData);
 };
 
@@ -122,7 +122,6 @@ class V8ExternalASCIILiteral : public v8::String::ExternalAsciiStringResource {
   // throughout this object's lifetime.
   V8ExternalASCIILiteral(const char* ascii, size_t length)
       : ascii_(ascii), length_(length) {
-
   }
 
   virtual const char* data() const {
@@ -161,18 +160,32 @@ std::string V8StringToUTF8(v8::Handle<v8::String> s) {
 }
 
 // Converts a V8 String to a UTF16 string.
-std::wstring V8StringToUTF16(v8::Handle<v8::String> s) {
+android::String16 V8StringToUTF16(v8::Handle<v8::String> s) {
   int len = s->Length();
-  std::wstring result;
-  // Note that the reinterpret cast is because on Windows string is an alias
-  // to wstring, and hence has character type wchar_t not uint16_t.
-  s->Write(reinterpret_cast<uint16_t*>(WriteInto(&result, len + 1)), 0, len);
-  return result;
+  char16_t* buf = new char16_t[len + 1];
+  s->Write(buf, 0, len);
+  android::String16 ret(buf, len);
+  delete buf;
+  return ret;
+}
+
+std::string UTF16ToASCII(const android::String16& str) {
+    android::String8 rstr(str);
+    return std::string(rstr.string());
+}
+
+android::String16 ASCIIToUTF16(const std::string str) {
+  android::String8 str8(str.c_str());
+  return android::String16(str8);
 }
 
 // Converts an ASCII std::string to a V8 string.
 v8::Local<v8::String> ASCIIStringToV8String(const std::string& s) {
   return v8::String::New(s.data(), s.size());
+}
+
+v8::Local<v8::String> UTF16StringToV8String(const android::String16& s) {
+  return v8::String::New(s.string(), s.size());
 }
 
 // Converts an ASCII string literal to a V8 string.
@@ -187,7 +200,7 @@ v8::Local<v8::String> ASCIILiteralToV8String(const char* ascii) {
 // Stringizes a V8 object by calling its toString() method. Returns true
 // on success. This may fail if the toString() throws an exception.
 bool V8ObjectToUTF16String(v8::Handle<v8::Value> object,
-                           std::wstring* utf16_result) {
+                           android::String16* utf16_result) {
   if (object.IsEmpty())
     return false;
 
@@ -206,7 +219,7 @@ bool GetHostnameArgument(const v8::Arguments& args, std::string* hostname) {
   if (args.Length() == 0 || args[0].IsEmpty() || !args[0]->IsString())
     return false;
 
-  const std::wstring hostname_utf16 = V8StringToUTF16(args[0]->ToString());
+  const android::String16 hostname_utf16 = V8StringToUTF16(args[0]->ToString());
 
   // If the hostname is already in ASCII, simply return it as is.
   if (IsStringASCII(hostname_utf16)) {
@@ -254,12 +267,6 @@ bool RemoveCharsT(const STR& input,
   }
 
   return removed;
-}
-
-bool RemoveChars(const std::wstring& input,
-                 const wchar_t remove_chars[],
-                 std::wstring* output) {
-  return RemoveCharsT(input, remove_chars, output);
 }
 
 bool RemoveChars(const std::string& input,
@@ -344,8 +351,9 @@ bool IsInNetEx(const std::string& ip_address, const std::string& ip_prefix) {
 
 class ProxyResolverV8::Context {
  public:
-  explicit Context(ProxyResolverJSBindings* js_bindings)
-      : js_bindings_(js_bindings) {
+  explicit Context(ProxyResolverJSBindings* js_bindings,
+          ProxyErrorListener* error_listener)
+      : js_bindings_(js_bindings), error_listener_(error_listener) {
   }
 
   ~Context() {
@@ -361,7 +369,7 @@ class ProxyResolverV8::Context {
     PurgeMemory();
   }
 
-  int ResolveProxy(const std::string url, const std::string host, std::string* results) {
+  int ResolveProxy(const android::String16 url, const android::String16 host, android::String16* results) {
     v8::Locker locked;
     v8::HandleScope scope;
 
@@ -369,44 +377,43 @@ class ProxyResolverV8::Context {
 
     v8::Local<v8::Value> function;
     if (!GetFindProxyForURL(&function)) {
-      *results = "FindProxyForURL() is undefined";
+      *results = ASCIIToUTF16("FindProxyForURL() is undefined");
       return ERR_PAC_SCRIPT_FAILED;
     }
 
     v8::Handle<v8::Value> argv[] = {
-        ASCIIStringToV8String(url),
-        ASCIIStringToV8String(host) };
+        UTF16StringToV8String(url),
+        UTF16StringToV8String(host) };
 
     v8::TryCatch try_catch;
     v8::Local<v8::Value> ret = v8::Function::Cast(*function)->Call(
         v8_context_->Global(), 2, argv);
 
     if (try_catch.HasCaught()) {
-      *results = V8StringToUTF8(try_catch.Message()->Get());
+      *results = V8StringToUTF16(try_catch.Message()->Get());
       return ERR_PAC_SCRIPT_FAILED;
     }
 
     if (!ret->IsString()) {
-      *results = "FindProxyForURL() did not return a string.";
+      *results = ASCIIToUTF16("FindProxyForURL() did not return a string.");
       return ERR_PAC_SCRIPT_FAILED;
     }
 
-    std::wstring ret_str = V8StringToUTF16(ret->ToString());
+    *results = V8StringToUTF16(ret->ToString());
 
-    if (!IsStringASCII(ret_str)) {
+    if (!IsStringASCII(*results)) {
       // TODO:         Rather than failing when a wide string is returned, we
       //               could extend the parsing to handle IDNA hostnames by
       //               converting them to ASCII punycode.
       //               crbug.com/47234
-      *results = "FindProxyForURL() returned a non-ASCII string";
+      *results = ASCIIToUTF16("FindProxyForURL() returned a non-ASCII string");
       return ERR_PAC_SCRIPT_FAILED;
     }
 
-    *results = V8StringToUTF8(ret->ToString());
     return OK;
   }
 
-  int InitV8(const std::string& pac_script) {
+  int InitV8(const android::String16& pac_script) {
     v8::Locker locked;
     v8::HandleScope scope;
 
@@ -467,7 +474,7 @@ class ProxyResolverV8::Context {
     }
 
     // Add the user's PAC code to the environment.
-    rv = RunScript(ASCIIStringToV8String(pac_script), kPacResourceName);
+    rv = RunScript(UTF16StringToV8String(pac_script), kPacResourceName);
     if (rv != OK) {
       return rv;
     }
@@ -502,6 +509,7 @@ class ProxyResolverV8::Context {
   void HandleError(v8::Handle<v8::Message> message) {
     if (message.IsEmpty())
       return;
+    error_listener_->ErrorMessage(V8StringToUTF16(message->Get()));
   }
 
   // Compiles and runs |script| in the current V8 context.
@@ -534,17 +542,18 @@ class ProxyResolverV8::Context {
 
     // Like firefox we assume "undefined" if no argument was specified, and
     // disregard any arguments beyond the first.
-    std::wstring message;
+    android::String16 message;
     if (args.Length() == 0) {
       std::string undef = "undefined";
-      std::wstring wundef(undef.begin(), undef.end());
+      android::String8 undef8(undef.c_str());
+      android::String16 wundef(undef8);
       message = wundef;
     } else {
       if (!V8ObjectToUTF16String(args[0], &message))
         return v8::Undefined();  // toString() threw an exception.
     }
 
-    context->js_bindings_->Alert(message);
+    context->error_listener_->AlertMessage(message);
     return v8::Undefined();
   }
 
@@ -664,6 +673,7 @@ class ProxyResolverV8::Context {
   }
 
   ProxyResolverJSBindings* js_bindings_;
+  ProxyErrorListener* error_listener_;
   v8::Persistent<v8::External> v8_this_;
   v8::Persistent<v8::Context> v8_context_;
 };
@@ -671,16 +681,19 @@ class ProxyResolverV8::Context {
 // ProxyResolverV8 ------------------------------------------------------------
 
 ProxyResolverV8::ProxyResolverV8(
-    ProxyResolverJSBindings* custom_js_bindings)
-    : context_(NULL), js_bindings_(custom_js_bindings) {
+    ProxyResolverJSBindings* custom_js_bindings,
+    ProxyErrorListener* error_listener)
+    : context_(NULL), js_bindings_(custom_js_bindings),
+      error_listener_(error_listener) {
+
 }
 
 ProxyResolverV8::~ProxyResolverV8() {
 
 }
 
-int ProxyResolverV8::GetProxyForURL(const std::string spec, const std::string host,
-                                    std::string* results) {
+int ProxyResolverV8::GetProxyForURL(const android::String16 spec, const android::String16 host,
+                                    android::String16* results) {
   // If the V8 instance has not been initialized (either because
   // SetPacScript() wasn't called yet, or because it failed.
   if (context_ == NULL)
@@ -705,15 +718,15 @@ void ProxyResolverV8::PurgeMemory() {
 void ProxyResolverV8::Shutdown() {
 }
 
-int ProxyResolverV8::SetPacScript(std::string& script_data) {
+int ProxyResolverV8::SetPacScript(android::String16& script_data) {
   if (context_ != NULL) {
     delete context_;
   }
-  if (script_data.empty())
+  if (script_data.size() == 0)
     return ERR_PAC_SCRIPT_FAILED;
 
   // Try parsing the PAC script.
-  context_ = new Context(js_bindings_);
+  context_ = new Context(js_bindings_, error_listener_);
   int rv;
   if ((rv = context_->InitV8(script_data)) != OK) {
     context_ = NULL;

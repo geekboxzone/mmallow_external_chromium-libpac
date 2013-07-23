@@ -7,6 +7,8 @@
 #pragma once
 #include "proxy_resolver_js_bindings.h"
 
+#include <utils/String16.h>
+
 namespace net {
 
 typedef void* RequestHandle;
@@ -15,6 +17,14 @@ typedef void* CompletionCallback;
 #define OK 0
 #define ERR_PAC_SCRIPT_FAILED -1
 #define ERR_FAILED -2
+
+class ProxyErrorListener {
+protected:
+  virtual ~ProxyErrorListener() {}
+public:
+  virtual void AlertMessage(android::String16 message) = 0;
+  virtual void ErrorMessage(android::String16 error) = 0;
+};
 
 // Implementation of ProxyResolver that uses V8 to evaluate PAC scripts.
 //
@@ -39,19 +49,20 @@ class ProxyResolverV8 {
   // Constructs a ProxyResolverV8 with custom bindings. ProxyResolverV8 takes
   // ownership of |custom_js_bindings| and deletes it when ProxyResolverV8
   // is destroyed.
-  explicit ProxyResolverV8(ProxyResolverJSBindings* custom_js_bindings);
+  explicit ProxyResolverV8(ProxyResolverJSBindings* custom_js_bindings,
+          ProxyErrorListener* error_listener);
 
   virtual ~ProxyResolverV8();
 
   ProxyResolverJSBindings* js_bindings() { return js_bindings_; }
 
-  virtual int GetProxyForURL(const std::string spec, const std::string host,
-                             std::string* results);
+  virtual int GetProxyForURL(const android::String16 spec, const android::String16 host,
+                             android::String16* results);
   virtual void CancelRequest(RequestHandle request);
   virtual void CancelSetPacScript();
   virtual void PurgeMemory();
   virtual void Shutdown();
-  virtual int SetPacScript(std::string& script_data);
+  virtual int SetPacScript(android::String16& script_data);
 
  private:
   // Context holds the Javascript state for the most recently loaded PAC
@@ -61,6 +72,7 @@ class ProxyResolverV8 {
   Context* context_;
 
   ProxyResolverJSBindings* js_bindings_;
+  ProxyErrorListener* error_listener_;
 };
 
 }  // namespace net

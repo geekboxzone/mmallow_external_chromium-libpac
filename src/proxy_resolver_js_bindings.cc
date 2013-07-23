@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "proxy_resolver_js_bindings.h"
+#include "proxy_resolver_v8.h"
 
 #include <netdb.h>
 #include <unistd.h>
@@ -18,11 +19,6 @@ namespace net {
 class DefaultJSBindings : public ProxyResolverJSBindings {
  public:
   DefaultJSBindings() {
-  }
-
-  // Handler for "alert(message)".
-  virtual void Alert(const std::wstring& message) {
-    // TODO: Fix error handling
   }
 
   // Handler for "myIpAddress()".
@@ -47,10 +43,6 @@ class DefaultJSBindings : public ProxyResolverJSBindings {
   virtual bool DnsResolveEx(const std::string& host,
                             std::string* ip_address_list) {
     return DnsResolveExImpl(host, ip_address_list);
-  }
-
-  // Handler for when an error is encountered. |line_number| may be -1.
-  virtual void OnError(int line_number, const std::wstring& message) {
   }
 
  private:
