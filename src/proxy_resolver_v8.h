@@ -58,10 +58,7 @@ class ProxyResolverV8 {
 
   virtual int GetProxyForURL(const android::String16 spec, const android::String16 host,
                              android::String16* results);
-  virtual void CancelRequest(RequestHandle request);
-  virtual void CancelSetPacScript();
   virtual void PurgeMemory();
-  virtual void Shutdown();
   virtual int SetPacScript(android::String16& script_data);
 
  private:

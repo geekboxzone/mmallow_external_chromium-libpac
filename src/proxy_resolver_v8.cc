@@ -689,7 +689,13 @@ ProxyResolverV8::ProxyResolverV8(
 }
 
 ProxyResolverV8::~ProxyResolverV8() {
-
+  if (context_ != NULL) {
+    delete context_;
+    context_ = NULL;
+  }
+  if (js_bindings_ != NULL) {
+    delete js_bindings_;
+  }
 }
 
 int ProxyResolverV8::GetProxyForURL(const android::String16 spec, const android::String16 host,
@@ -705,22 +711,14 @@ int ProxyResolverV8::GetProxyForURL(const android::String16 spec, const android:
   return rv;
 }
 
-void ProxyResolverV8::CancelRequest(RequestHandle request) {
-}
-
-void ProxyResolverV8::CancelSetPacScript() {
-}
-
 void ProxyResolverV8::PurgeMemory() {
   context_->PurgeMemory();
-}
-
-void ProxyResolverV8::Shutdown() {
 }
 
 int ProxyResolverV8::SetPacScript(android::String16& script_data) {
   if (context_ != NULL) {
     delete context_;
+    context_ = NULL;
   }
   if (script_data.size() == 0)
     return ERR_PAC_SCRIPT_FAILED;
