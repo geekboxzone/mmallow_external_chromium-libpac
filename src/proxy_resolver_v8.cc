@@ -330,6 +330,9 @@ bool SortIpAddressList(const std::string& ip_address_list,
 // address and IPv4 prefix).
 bool IsInNetEx(const std::string& ip_address, const std::string& ip_prefix) {
   IPAddressNumber address;
+  std::string cleaned_ip_address;
+  if (RemoveChars(ip_address, " \t", &cleaned_ip_address))
+    return false;
   if (!ParseIPLiteralToNumber(ip_address, &address))
     return false;
 
