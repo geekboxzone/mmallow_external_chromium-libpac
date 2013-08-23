@@ -300,7 +300,7 @@ bool SortIpAddressList(const std::string& ip_address_list,
     if (!ParseIPLiteralToNumber(tok_list, &ip_num))
       return false;
     ip_vector.push_back(IPAddress(tok_list, ip_num));
-    tok_list = strtok(tok_list, ";");
+    tok_list = strtok(NULL, ";");
   }
 
   if (ip_vector.empty())  // Can happen if we have something like
