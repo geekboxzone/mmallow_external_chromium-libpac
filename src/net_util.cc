@@ -32,7 +32,10 @@ bool ParseIPLiteralToNumber(const std::string& ip_literal,
     mode = AF_INET6;
     size = sizeof(struct in6_addr);
   }
-  inet_pton(mode, ip_literal.c_str(), buf);
+  if (inet_pton(mode, ip_literal.c_str(), buf) != 1) {
+    return false;
+  }
+  ip_number->resize(size);
   for (int i = 0; i < size; i++) {
     (*ip_number)[i] = buf[i];
   }
