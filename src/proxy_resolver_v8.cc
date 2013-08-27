@@ -170,13 +170,8 @@ android::String16 V8StringToUTF16(v8::Handle<v8::String> s) {
 }
 
 std::string UTF16ToASCII(const android::String16& str) {
-    android::String8 rstr(str);
-    return std::string(rstr.string());
-}
-
-android::String16 ASCIIToUTF16(const std::string str) {
-  android::String8 str8(str.c_str());
-  return android::String16(str8);
+  android::String8 rstr(str);
+  return std::string(rstr.string());
 }
 
 // Converts an ASCII std::string to a V8 string.
@@ -372,7 +367,8 @@ class ProxyResolverV8::Context {
     PurgeMemory();
   }
 
-  int ResolveProxy(const android::String16 url, const android::String16 host, android::String16* results) {
+  int ResolveProxy(const android::String16 url, const android::String16 host,
+        android::String16* results) {
     v8::Locker locked;
     v8::HandleScope scope;
 
@@ -380,7 +376,8 @@ class ProxyResolverV8::Context {
 
     v8::Local<v8::Value> function;
     if (!GetFindProxyForURL(&function)) {
-      *results = ASCIIToUTF16("FindProxyForURL() is undefined");
+      error_listener_->ErrorMessage(
+          android::String16("FindProxyForURL() is undefined"));
       return ERR_PAC_SCRIPT_FAILED;
     }
 
@@ -393,12 +390,14 @@ class ProxyResolverV8::Context {
         v8_context_->Global(), 2, argv);
 
     if (try_catch.HasCaught()) {
-      *results = V8StringToUTF16(try_catch.Message()->Get());
+      error_listener_->ErrorMessage(
+          V8StringToUTF16(try_catch.Message()->Get()));
       return ERR_PAC_SCRIPT_FAILED;
     }
 
     if (!ret->IsString()) {
-      *results = ASCIIToUTF16("FindProxyForURL() did not return a string.");
+      error_listener_->ErrorMessage(
+          android::String16("FindProxyForURL() did not return a string."));
       return ERR_PAC_SCRIPT_FAILED;
     }
 
@@ -409,7 +408,8 @@ class ProxyResolverV8::Context {
       //               could extend the parsing to handle IDNA hostnames by
       //               converting them to ASCII punycode.
       //               crbug.com/47234
-      *results = ASCIIToUTF16("FindProxyForURL() returned a non-ASCII string");
+      error_listener_->ErrorMessage(
+          android::String16("FindProxyForURL() returned a non-ASCII string"));
       return ERR_PAC_SCRIPT_FAILED;
     }
 
@@ -718,7 +718,7 @@ void ProxyResolverV8::PurgeMemory() {
   context_->PurgeMemory();
 }
 
-int ProxyResolverV8::SetPacScript(android::String16& script_data) {
+int ProxyResolverV8::SetPacScript(const android::String16& script_data) {
   if (context_ != NULL) {
     delete context_;
     context_ = NULL;

@@ -59,7 +59,7 @@ class ProxyResolverV8 {
   virtual int GetProxyForURL(const android::String16 spec, const android::String16 host,
                              android::String16* results);
   virtual void PurgeMemory();
-  virtual int SetPacScript(android::String16& script_data);
+  virtual int SetPacScript(const android::String16& script_data);
 
  private:
   // Context holds the Javascript state for the most recently loaded PAC
