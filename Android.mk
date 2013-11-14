@@ -16,6 +16,7 @@ LOCAL_CFLAGS += \
   -Wno-endif-labels \
   -Wno-import \
   -Wno-format \
+  -Wno-unused-parameter \
 
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/src external/v8
 
