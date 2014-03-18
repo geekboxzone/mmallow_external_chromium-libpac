@@ -18,10 +18,29 @@ LOCAL_CFLAGS += \
   -Wno-format \
   -Wno-unused-parameter \
 
-LOCAL_C_INCLUDES += $(LOCAL_PATH)/src external/v8
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/src external/chromium_org/v8
 
-LOCAL_STATIC_LIBRARIES := libv8
-LOCAL_SHARED_LIBRARIES := libutils libstlport liblog
+# Depend on V8 from WebView
+# DO NOT COPY without permission from WebView Owners
+LOCAL_STATIC_LIBRARIES := \
+  v8_tools_gyp_v8_snapshot_gyp
+ifeq ($(TARGET_ARCH),x86_64)
+LOCAL_STATIC_LIBRARIES += v8_tools_gyp_v8_base_ia32_gyp
+else ifeq ($(TARGET_ARCH),x86)
+LOCAL_STATIC_LIBRARIES += v8_tools_gyp_v8_base_ia32_gyp
+else ifeq ($(TARGET_ARCH),arm64)
+LOCAL_STATIC_LIBRARIES += v8_tools_gyp_v8_base_arm_gyp
+else ifeq ($(TARGET_ARCH),arm)
+LOCAL_STATIC_LIBRARIES += v8_tools_gyp_v8_base_arm_gyp
+else ifeq ($(TARGET_ARCH),mips64)
+LOCAL_STATIC_LIBRARIES += v8_tools_gyp_v8_base_mipsel_gyp
+else ifeq ($(TARGET_ARCH),mips)
+LOCAL_STATIC_LIBRARIES += v8_tools_gyp_v8_base_mipsel_gyp
+else
+$(error Unsupported TARGET_ARCH)
+endif
+
+LOCAL_SHARED_LIBRARIES := libutils libstlport liblog libicui18n libicuuc
 
 include external/stlport/libstlport.mk
 
