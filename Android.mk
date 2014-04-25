@@ -20,25 +20,17 @@ LOCAL_CFLAGS += \
 
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/src external/chromium_org/v8
 
+# Temporarily disable arm64 as WebView isn't being built there yet.
+LOCAL_MODULE_UNSUPPORTED_TARGET_ARCH := arm64
+
 # Depend on V8 from WebView
 # DO NOT COPY without permission from WebView Owners
-ifeq ($(TARGET_ARCH),x86_64)
-LOCAL_STATIC_LIBRARIES := v8_tools_gyp_v8_base_ia32_gyp
-else ifeq ($(TARGET_ARCH),x86)
-LOCAL_STATIC_LIBRARIES := v8_tools_gyp_v8_base_ia32_gyp
-else ifeq ($(TARGET_ARCH),arm64)
-LOCAL_STATIC_LIBRARIES := v8_tools_gyp_v8_base_arm_gyp
-else ifeq ($(TARGET_ARCH),arm)
-LOCAL_STATIC_LIBRARIES := v8_tools_gyp_v8_base_arm_gyp
-else ifeq ($(TARGET_ARCH),mips64)
-LOCAL_STATIC_LIBRARIES := v8_tools_gyp_v8_base_mipsel_gyp
-else ifeq ($(TARGET_ARCH),mips)
-LOCAL_STATIC_LIBRARIES := v8_tools_gyp_v8_base_mipsel_gyp
-else
-$(error Unsupported TARGET_ARCH)
-endif
-LOCAL_STATIC_LIBRARIES += \
-  v8_tools_gyp_v8_snapshot_gyp
+LOCAL_STATIC_LIBRARIES_x86_64 := v8_tools_gyp_v8_base_x64_gyp
+LOCAL_STATIC_LIBRARIES_x86 := v8_tools_gyp_v8_base_ia32_gyp
+LOCAL_STATIC_LIBRARIES_arm64 := v8_tools_gyp_v8_base_arm64_gyp
+LOCAL_STATIC_LIBRARIES_arm := v8_tools_gyp_v8_base_arm_gyp
+LOCAL_STATIC_LIBRARIES_mips := v8_tools_gyp_v8_base_mipsel_gyp
+LOCAL_STATIC_LIBRARIES := v8_tools_gyp_v8_snapshot_gyp
 
 LOCAL_SHARED_LIBRARIES := libutils libstlport liblog libicui18n libicuuc
 
