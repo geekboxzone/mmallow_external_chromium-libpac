@@ -18,11 +18,14 @@ LOCAL_CFLAGS += \
   -Wno-format \
   -Wno-unused-parameter \
 
-LOCAL_C_INCLUDES += $(LOCAL_PATH)/src external/chromium_org/v8
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/src \
+                    external/chromium_org/v8 \
+                    external/chromium_org/src/v8 \
 
 # Depend on V8 from WebView
 # DO NOT COPY without permission from WebView Owners
 LOCAL_STATIC_LIBRARIES := v8_tools_gyp_v8_base_gyp \
+			  v8_tools_gyp_v8_libbase_gyp \
                           v8_tools_gyp_v8_snapshot_gyp
 
 LOCAL_SHARED_LIBRARIES := libutils libstlport liblog libicui18n libicuuc
