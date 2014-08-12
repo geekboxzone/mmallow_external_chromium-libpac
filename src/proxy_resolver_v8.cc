@@ -499,7 +499,7 @@ class ProxyResolverV8::Context {
   void PurgeMemory() {
     v8::Locker locked(isolate_);
     v8::Isolate::Scope isolate_scope(isolate_);
-    v8::V8::LowMemoryNotification();
+    isolate_->LowMemoryNotification();
   }
 
  private:
