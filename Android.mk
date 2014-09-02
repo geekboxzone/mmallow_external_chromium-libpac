@@ -26,9 +26,12 @@ LOCAL_C_INCLUDES += $(LOCAL_PATH)/src \
 # DO NOT COPY without permission from WebView Owners
 LOCAL_STATIC_LIBRARIES := v8_tools_gyp_v8_base_gyp \
 			  v8_tools_gyp_v8_libbase_gyp \
-                          v8_tools_gyp_v8_snapshot_gyp
+                          v8_tools_gyp_v8_snapshot_gyp \
+                          third_party_icu_icui18n_gyp \
+                          third_party_icu_icuuc_gyp \
+                          third_party_icu_icudata_gyp
 
-LOCAL_SHARED_LIBRARIES := libutils libstlport liblog libicui18n libicuuc
+LOCAL_SHARED_LIBRARIES := libutils libstlport liblog libgabi++
 
 include external/stlport/libstlport.mk
 
