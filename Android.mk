@@ -1,5 +1,6 @@
 LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
+LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
 
 LOCAL_CPP_EXTENSION := .cc
 
@@ -28,7 +29,7 @@ LOCAL_STATIC_LIBRARIES := v8_tools_gyp_v8_base_gyp \
 			  v8_tools_gyp_v8_libbase_gyp \
                           v8_tools_gyp_v8_snapshot_gyp
 
-LOCAL_SHARED_LIBRARIES := libutils libstlport liblog libicui18n libicuuc
+LOCAL_SHARED_LIBRARIES := libutils liblog libicui18n libicuuc
 
 include external/stlport/libstlport.mk
 
