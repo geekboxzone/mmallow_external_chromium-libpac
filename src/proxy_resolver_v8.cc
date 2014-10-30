@@ -710,7 +710,7 @@ ProxyResolverV8::ProxyResolverV8(
     ProxyErrorListener* error_listener)
     : context_(NULL), js_bindings_(custom_js_bindings),
       error_listener_(error_listener) {
-
+  v8::V8::Initialize();
 }
 
 ProxyResolverV8::~ProxyResolverV8() {
