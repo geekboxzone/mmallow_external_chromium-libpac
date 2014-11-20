@@ -103,7 +103,7 @@ class V8ExternalStringFromScriptData
       : script_data_(script_data) {}
 
   virtual const uint16_t* data() const {
-    return script_data_.string();
+    return reinterpret_cast<const uint16_t*>(script_data_.string());
   }
 
   virtual size_t length() const {
@@ -164,7 +164,7 @@ std::string V8StringToUTF8(v8::Handle<v8::String> s) {
 android::String16 V8StringToUTF16(v8::Handle<v8::String> s) {
   int len = s->Length();
   char16_t* buf = new char16_t[len + 1];
-  s->Write(buf, 0, len);
+  s->Write(reinterpret_cast<uint16_t*>(buf), 0, len);
   android::String16 ret(buf, len);
   delete buf;
   return ret;
@@ -181,7 +181,9 @@ v8::Local<v8::String> ASCIIStringToV8String(v8::Isolate* isolate, const std::str
 }
 
 v8::Local<v8::String> UTF16StringToV8String(v8::Isolate* isolate, const android::String16& s) {
-  return v8::String::NewFromTwoByte(isolate, s.string(), v8::String::kNormalString, s.size());
+  return v8::String::NewFromTwoByte(
+      isolate, reinterpret_cast<const uint16_t*>(s.string()),
+      v8::String::kNormalString, s.size());
 }
 
 // Converts an ASCII string literal to a V8 string.
