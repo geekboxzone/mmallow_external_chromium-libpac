@@ -1,4 +1,3 @@
-ifneq ($(TARGET_SIMULATOR),true)
 LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
@@ -22,5 +21,3 @@ LOCAL_C_INCLUDES += $(LOCAL_PATH)/../src $(LOCAL_PATH)/ external/v8
 LOCAL_SHARED_LIBRARIES := libpac libutils liblog
 
 include $(BUILD_NATIVE_TEST)
-
-endif
