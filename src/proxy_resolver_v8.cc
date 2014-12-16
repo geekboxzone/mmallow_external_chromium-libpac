@@ -2,25 +2,18 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <algorithm>
-#include <cstdio>
-#include <string>
-
-#include <utils/String16.h>
-
 #include "proxy_resolver_v8.h"
 
-#include "proxy_resolver_script.h"
-#include "net_util.h"
-#include <include/v8.h>
 #include <algorithm>
+#include <cstdio>
+#include <iostream>
+#include <string>
+#include <utils/String8.h>
+#include <v8.h>
 #include <vector>
 
-#include <iostream>
-
-#include <string.h>
-#include <utils/String8.h>
-#include <utils/String16.h>
+#include "net_util.h"
+#include "proxy_resolver_script.h"
 
 // Notes on the javascript environment:
 //
